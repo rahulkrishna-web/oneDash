@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-width=1.0">
+  <title>OneDash New Tab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div id="date-nav" class="date-nav">
+        <!-- Dynamically populated dates -->
+      </div>
+      
+      <!-- Progress Bar -->
+      <div class="progress-container">
+        <label>Daily Progress</label>
+        <div class="progress-track">
+          <div id="daily-progress" class="progress-fill"></div>
+        </div>
+      </div>
+      
+      <!-- Export Action -->
+      <div style="margin-top: 1.5rem; text-align: center;">
+         <button id="export-btn" title="Export Backup" style="background: none; border: none; cursor: pointer; color: var(--text-muted); opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+         </button>
+      </div>
+    </aside>
+    
+    <main class="central-card">
+      <div class="notebook-binding">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+      </div>
+      
+      <div class="card-columns">
+        <section class="left-column">
+          <div class="focus-area">
+             <div class="top-sites-grid" id="top-sites">
+                <!-- Polaroid cards for top sites -->
+             </div>
+          </div>
+          
+          <div class="streak-counter">
+             <h3 id="streak-title">3 Day Streak</h3>
+             <p>A fresh start awaits you today!</p>
+          </div>
+        </section>
+        
+        <div class="notebook-divider"></div>
+        
+        <section class="right-column">
+          <div class="greeting-header">
+            <h2 id="greeting-title">Good Morning, Developer</h2>
+            <p id="greeting-quote">Waking up with intention sets the tone...</p>
+          </div>
+          
+          <div class="intent-section">
+            <p class="intent-prompt"><em>Set an intention for today: What is one thing you want to accomplish or feel?</em></p>
+            <textarea id="daily-focus" class="journal-input" placeholder="I want to focus on..."></textarea>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>

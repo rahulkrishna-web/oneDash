@@ -1,0 +1,439 @@
+:root {
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --accent: #3b82f6;
+  --border: #e2e8f0;
+  --shadow-card: 0 20px 50px -12px rgba(0, 0, 0, 0.1);
+  --shadow-active: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.app-container {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  width: 90vw;
+  max-width: 1300px;
+  height: 85vh;
+  max-height: 850px;
+  gap: 2rem;
+}
+
+/* Sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.date-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.date-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 1rem 0.5rem;
+  border-radius: 40px;
+  transition: all 0.3s ease;
+  cursor: default;
+  text-transform: uppercase;
+  min-width: 65px;
+}
+
+.date-item.active {
+  background: white;
+  color: var(--text-main);
+  font-weight: 600;
+  box-shadow: var(--shadow-active);
+}
+
+.date-item .day-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+  color: var(--text-main);
+}
+.date-item:not(.active) .day-num {
+  color: var(--text-muted);
+}
+
+.date-label {
+  margin-bottom: 0.2rem;
+  opacity: 0.7;
+}
+.date-month {
+  margin-top: 0.2rem;
+  opacity: 0.7;
+}
+
+/* Progress bar */
+.progress-container {
+  width: 100%;
+  text-align: center;
+}
+
+.progress-container label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.progress-track {
+  width: 4px;
+  height: 120px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--accent);
+  height: 0%;
+  transition: height 1s ease-out;
+}
+
+/* Central Card */
+.central-card {
+  background: var(--card-bg);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(10px);
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Inner border mimic */
+.central-card::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+/* Decorative Notebook binding rings */
+.notebook-binding {
+  position: absolute;
+  top: 15%;
+  bottom: 15%;
+  left: 50%;
+  width: 40px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.ring {
+  width: 24px;
+  height: 10px;
+  background: linear-gradient(to right, #cfd8dc, #eceff1, #cfd8dc);
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.7);
+  margin: 0 auto;
+  position: relative;
+}
+/* Ring holes on the paper */
+.ring::before, .ring::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 14px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  box-shadow: inset 1px 1px 3px rgba(0,0,0,0.1);
+  z-index: -1;
+}
+.ring::before { left: -10px; }
+.ring::after { right: -10px; }
+
+
+.notebook-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent 5%, var(--border) 50%, transparent 95%);
+  z-index: 10;
+  transform: translateX(-50%);
+}
+
+.card-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  padding: 4rem;
+  gap: 6rem;
+  z-index: 5;
+}
+
+/* Left Column */
+.left-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.focus-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.top-sites-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* Polaroid style */
+.polaroid {
+  background: white;
+  padding: 12px 12px 35px 12px;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.05);
+  text-align: center;
+  border: 1px solid #f1f5f9;
+  text-decoration: none;
+  color: var(--text-main);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.polaroid::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  left: 10%;
+  width: 80%;
+  height: 5px;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.polaroid:nth-child(even) {
+  transform: rotate(2deg);
+}
+.polaroid:nth-child(odd) {
+  transform: rotate(-2deg);
+}
+
+.polaroid:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  z-index: 10;
+}
+
+.polaroid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  margin-bottom: 15px;
+  background: #f8fafc;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.streak-counter {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.streak-counter h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.streak-counter p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+
+/* Right Column (Notebook) */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-left: 2rem;
+}
+
+.greeting-header {
+  margin-bottom: 2.5rem;
+  padding: 2rem;
+  background: #fafafa;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+}
+
+.greeting-header h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-main);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.greeting-header h2 .time-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.greeting-header p {
+  color: var(--text-main);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.greeting-header .author {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.intent-section {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.intent-prompt {
+  color: #f59e0b; /* Golden tone similar to screenshot */
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-style: italic;
+  font-weight: 500;
+}
+.intent-prompt::before {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 16px;
+  background-color: #f59e0b;
+  transform: rotate(20deg);
+}
+
+
+.journal-input {
+  flex-grow: 1;
+  width: 100%;
+  border: none;
+  resize: none;
+  background: repeating-linear-gradient(transparent, transparent 33px, #e2e8f0 34px);
+  background-attachment: local;
+  line-height: 34px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 1.05rem;
+  color: var(--text-main);
+  padding: 4px 0;
+  outline: none;
+  min-height: 300px;
+}
+
+.journal-input::placeholder {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .app-container {
+    grid-template-columns: 1fr;
+    height: auto;
+    max-height: none;
+    padding: 2rem 0;
+  }
+  .sidebar { 
+    flex-direction: row; 
+    padding: 1rem 2rem;
+  }
+  .date-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .card-columns {
+    grid-template-columns: 1fr;
+    padding: 2rem;
+    gap: 3rem;
+  }
+  .notebook-binding, .notebook-divider {
+    display: none;
+  }
+  .right-column {
+    padding-left: 0;
+  }
+}
