@@ -3,28 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-width=1.0">
-  <title>OneDash New Tab</title>
+  <title>OneDash</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  
+  <header class="top-bar">
+    <div class="status-indicators">
+      <div class="streak-display" title="Your Daily Streak">
+        🔥 <strong id="streak-val">0 Days</strong>
+        <span id="streak-msg" class="streak-msg">Ready to start?</span>
+      </div>
+      <div class="status-dropdown">
+        <span class="mood" id="mood-display" title="Change Mood">😃 Happy</span>
+        <div id="mood-popup" class="popup hidden">
+          <button class="mood-option" data-mood="😃 Happy">😃 Happy</button>
+          <button class="mood-option" data-mood="😐 Neutral">😐 Neutral</button>
+          <button class="mood-option" data-mood="😔 Sad">😔 Sad</button>
+          <button class="mood-option" data-mood="🔥 Focused">🔥 Focused</button>
+          <button class="mood-option" data-mood="😴 Tired">😴 Tired</button>
+        </div>
+      </div>
+      <div class="status-dropdown">
+        <span class="energy" id="energy-display" title="Update Energy">Energy <strong id="energy-display-val">80%</strong></span>
+        <div id="energy-popup" class="popup hidden">
+          <label for="energy-range">Energy Level</label>
+          <div class="energy-input-row">
+            <input type="range" id="energy-range" min="0" max="100" step="10" value="80">
+            <span id="energy-value-preview">80%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
   <div class="app-container">
     <aside class="sidebar">
       <div id="date-nav" class="date-nav">
-        <!-- Dynamically populated dates -->
+        <!-- Dynamically populated dates list (past 30 days) -->
       </div>
-      
-      <!-- Progress Bar -->
-      <div class="progress-container">
-        <label>Daily Progress</label>
-        <div class="progress-track">
-          <div id="daily-progress" class="progress-fill"></div>
-        </div>
-      </div>
-      
-      <!-- Export Action -->
-      <div style="margin-top: 1.5rem; text-align: center;">
-         <button id="export-btn" title="Export Backup" style="background: none; border: none; cursor: pointer; color: var(--text-muted); opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+      <div class="sidebar-actions">
+         <button id="export-btn" title="Export Backup">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -34,44 +54,78 @@
       </div>
     </aside>
     
-    <main class="central-card">
-      <div class="notebook-binding">
-        <div class="ring"></div>
-        <div class="ring"></div>
-        <div class="ring"></div>
-        <div class="ring"></div>
-        <div class="ring"></div>
-        <div class="ring"></div>
-      </div>
+    <main class="main-content">
       
-      <div class="card-columns">
-        <section class="left-column">
-          <div class="focus-area">
-             <div class="top-sites-grid" id="top-sites">
-                <!-- Polaroid cards for top sites -->
+      <section class="intention-section">
+        <label>Set an intention for today:<br><span>What is one thing you want to accomplish or feel?</span></label>
+        <div class="input-container">
+          <input type="text" id="daily-intention" placeholder="Type your intention here..." />
+        </div>
+      </section>
+
+      <section class="modules-grid">
+        
+        <!-- Tasks Module -->
+        <article class="module-card">
+          <div class="card-header">
+            <div>
+              <h3>Tasks</h3>
+              <p>Make a list of tasks for today. Toggle to complete.</p>
+            </div>
+            <button id="add-root-task-btn" class="add-btn">+</button>
+          </div>
+          <div class="card-content tasks-content" id="tasks-container">
+             <!-- Nested tasks list will be rendered here -->
+          </div>
+        </article>
+        
+        <!-- Notes Module -->
+        <article class="module-card">
+          <div class="card-header">
+            <div>
+              <h3>Notes</h3>
+              <p>Personal and professional notes.</p>
+            </div>
+          </div>
+          <div class="card-content notes-content">
+             <textarea id="daily-notes" placeholder="Write here..."></textarea>
+          </div>
+        </article>
+
+        <!-- Finance Module -->
+        <article class="module-card">
+          <div class="card-header">
+            <div>
+              <h3>Finance</h3>
+              <p>A Ledger for income and expenses.</p>
+            </div>
+            <button id="add-finance-btn" class="add-btn">+</button>
+          </div>
+          <div class="card-content finance-content">
+             <div class="finance-list" id="finance-list">
+               <!-- Finance items rendered here -->
+             </div>
+             
+             <!-- Hidden Add Finance Form -->
+             <div id="finance-form" class="hidden finance-form">
+                <select id="finance-type">
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+                <input type="text" id="finance-desc" placeholder="Description">
+                <input type="number" id="finance-amount" placeholder="Amount">
+                <button id="save-finance-btn">Save</button>
+                <button id="cancel-finance-btn">Cancel</button>
+             </div>
+             
+             <div class="finance-summary">
+               <span>Total:</span>
+               <span id="finance-total">$0.00</span>
              </div>
           </div>
-          
-          <div class="streak-counter">
-             <h3 id="streak-title">3 Day Streak</h3>
-             <p>A fresh start awaits you today!</p>
-          </div>
-        </section>
-        
-        <div class="notebook-divider"></div>
-        
-        <section class="right-column">
-          <div class="greeting-header">
-            <h2 id="greeting-title">Good Morning, Developer</h2>
-            <p id="greeting-quote">Waking up with intention sets the tone...</p>
-          </div>
-          
-          <div class="intent-section">
-            <p class="intent-prompt"><em>Set an intention for today: What is one thing you want to accomplish or feel?</em></p>
-            <textarea id="daily-focus" class="journal-input" placeholder="I want to focus on..."></textarea>
-          </div>
-        </section>
-      </div>
+        </article>
+
+      </section>
     </main>
   </div>
   

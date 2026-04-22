@@ -1,263 +1,476 @@
 // app.js
 
+const state = {
+    activeDate: new Date().toISOString().split('T')[0],
+    data: { intention: '', tasks: [], notes: '', finance: [], mood: '😃 Happy', energy: '80' },
+    draggedTask: null
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
 function initApp() {
-    updateDateNavigation();
-    updateGreeting();
-    loadQuotes();
-    initTopSites();
-    initJournal();
-    updateProgressBar();
-    loadStreak();
-    initExportBackup();
+    renderDateNav();
+    loadDateData(state.activeDate);
     
-    // Update time-dependent UI every minute
-    setInterval(() => {
-        updateProgressBar();
-        updateTime();
-    }, 60000);
+    // Bind global listeners
+    document.getElementById('daily-intention').addEventListener('input', debounce(saveIntention, 500));
+    document.getElementById('daily-notes').addEventListener('input', debounce(saveNotes, 500));
+    document.getElementById('export-btn')?.addEventListener('click', exportBackup);
+    
+    initStatusPopups();
+    loadStreak();
+
+    
+    // Tasks
+    document.getElementById('add-root-task-btn').addEventListener('click', () => {
+        addTask(state.data.tasks, 'New Task');
+        renderTasks();
+        saveTasks();
+    });
+    
+    // Finance
+    document.getElementById('add-finance-btn').addEventListener('click', () => {
+        document.getElementById('finance-form').classList.remove('hidden');
+    });
+    document.getElementById('cancel-finance-btn').addEventListener('click', () => {
+        document.getElementById('finance-form').classList.add('hidden');
+        clearFinanceForm();
+    });
+    document.getElementById('save-finance-btn').addEventListener('click', saveFinanceEntry);
 }
 
-function updateDateNavigation() {
+// --- Date Navigation ---
+function renderDateNav() {
+    const nav = document.getElementById('date-nav');
+    nav.innerHTML = '';
     const today = new Date();
-    const dateNav = document.getElementById('date-nav');
     
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    dateNav.innerHTML = '';
-    
-    for (let i = -2; i <= 2; i++) {
-        const itemDate = new Date(today);
-        itemDate.setDate(today.getDate() + i);
-        
-        const dayName = days[itemDate.getDay()];
-        const dayNum = String(itemDate.getDate()).padStart(2, '0');
-        const monthName = months[itemDate.getMonth()];
+    // Generate past 30 days and couple of future days
+    for (let i = 2; i >= -30; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const iso = d.toISOString().split('T')[0];
         
         const el = document.createElement('div');
-        el.className = `date-item ${i === 0 ? 'active' : ''}`;
+        el.className = `date-item ${iso === state.activeDate ? 'active' : ''}`;
+        el.onclick = () => switchDate(iso);
         
-        // Add label 
-        let label = dayName;
+        const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const num = String(d.getDate()).padStart(2, '0');
+        const monthStr = d.toLocaleDateString('en-US', { month: 'short' });
+        
+        // Quick labels
+        let label = dayStr;
         if (i === 0) label = 'Today';
-        else if (i === -1) label = 'Yesterday';
-        else if (i === -2) label = '2 days ago';
-        else if (i === 1) label = 'Tomorrow';
-        else if (i === 2) label = 'In 2 days';
+        if (i === -1) label = 'Yesterday';
+        if (i < -1) label = `${Math.abs(i)} days ago`;
+        if (i === 1) label = 'Tomorrow';
         
         el.innerHTML = `
             <span class="date-label">${label}</span>
-            <span class="day-num">${dayNum}</span>
-            <span class="date-month">${monthName}</span>
+            <span class="day-num">${num}</span>
+            <span class="date-month">${monthStr}</span>
         `;
-        
-        dateNav.appendChild(el);
+        nav.appendChild(el);
     }
 }
 
-function updateGreeting() {
-    const title = document.getElementById('greeting-title');
-    const hour = new Date().getHours();
-    
-    let timeOfDay = "Morning";
-    if (hour >= 12 && hour < 17) timeOfDay = "Afternoon";
-    else if (hour >= 17) timeOfDay = "Evening";
-    
-    // Update time top right pill if we added one, else just the greeting
-    const timeStr = formatAMPM(new Date());
-    
-    title.innerHTML = `
-        <span class="greeting-text">Good ${timeOfDay}, Developer</span>
-        <span class="time-text">${timeStr}</span>
-    `;
+function switchDate(iso) {
+    state.activeDate = iso;
+    renderDateNav();
+    loadDateData(iso);
 }
 
-function updateTime() {
-    const timeEl = document.querySelector('.time-text');
-    if (timeEl) {
-        timeEl.textContent = formatAMPM(new Date());
-    }
-}
-
-function formatAMPM(date) {
-    let hours = date.getHours();
-    let minutes = date.getMinutes();
-    let ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-    minutes = minutes < 10 ? '0'+minutes : minutes;
-    return hours + ':' + minutes + ' ' + ampm;
-}
-
-async function loadQuotes() {
-    try {
-        const res = await fetch('quotes.json');
-        const quotes = await res.json();
-        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-        
-        const quoteEl = document.getElementById('greeting-quote');
-        quoteEl.innerHTML = `${randomQuote.text} <span class="author">— ${randomQuote.author}</span>`;
-    } catch (e) {
-        console.error("Failed to load quotes", e);
-        // Fallback
-        document.getElementById('greeting-quote').innerHTML = `Waking up with intention sets the tone for a beautiful day ahead.`;
-    }
-}
-
-function initTopSites() {
-    const topSitesContainer = document.getElementById('top-sites');
-    if (typeof chrome !== 'undefined' && chrome.topSites) {
-        chrome.topSites.get((sites) => {
-            topSitesContainer.innerHTML = '';
-            // Show up to 4 top sites
-            const displaySites = sites.slice(0, 4);
-            
-            displaySites.forEach(site => {
-                const card = document.createElement('a');
-                card.className = 'polaroid';
-                card.href = site.url;
-                
-                // Get base domain for favicon
-                const urlObj = new URL(site.url);
-                // Use a reliable favicon service
-                const faviconUrl = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=128`;
-                
-                card.innerHTML = `
-                    <img src="${faviconUrl}" alt="${site.title}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'64\\' height=\\'64\\'><rect width=\\'64\\' height=\\'64\\' fill=\\'%23f1f5f9\\'/></svg>'"/>
-                    <span></span>
-                `;
-                topSitesContainer.appendChild(card);
-            });
-            // If less than 4 sites, fill with placeholders to keep grid nice
-            for (let i = displaySites.length; i < 4; i++) {
-                const placeholder = document.createElement('div');
-                placeholder.className = 'polaroid';
-                placeholder.innerHTML = `
-                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' fill='%23f1f5f9'/></svg>" />
-                    <span></span>
-                `;
-                topSitesContainer.appendChild(placeholder);
-            }
-        });
-    } else {
-        // Fallback for non-extension environment
-        // Render dummy polaroids
-        topSitesContainer.innerHTML = '';
-        for (let i = 0; i < 4; i++) {
-            const card = document.createElement('div');
-            card.className = 'polaroid';
-            card.innerHTML = `
-                <img src="https://ui-avatars.com/api/?name=Top+Site&background=random" />
-                <span></span>
-            `;
-            topSitesContainer.appendChild(card);
-        }
-    }
-}
-
-function initJournal() {
-    const textArea = document.querySelector('.journal-input');
+// --- Storage Logic ---
+function loadDateData(iso) {
+    const defaultData = { intention: '', tasks: [], notes: '', finance: [], mood: '😃 Happy', energy: '80' };
     
     if (typeof chrome !== 'undefined' && chrome.storage) {
-        // Load existing content
-        chrome.storage.local.get(['daily_focus'], (result) => {
-            if (result.daily_focus) {
-                textArea.value = result.daily_focus;
-            }
-        });
-        
-        // Save on input
-        textArea.addEventListener('input', (e) => {
-            chrome.storage.local.set({ 'daily_focus': e.target.value });
+        chrome.storage.local.get([iso], (res) => {
+            state.data = res[iso] || defaultData;
+            hydrateUI();
         });
     } else {
-        textArea.value = localStorage.getItem('daily_focus') || '';
-        textArea.addEventListener('input', (e) => {
-            localStorage.setItem('daily_focus', e.target.value);
-        });
+        const stored = localStorage.getItem(iso);
+        state.data = stored ? JSON.parse(stored) : defaultData;
+        hydrateUI();
     }
 }
 
-function updateProgressBar() {
-    const progressEl = document.getElementById('daily-progress');
-    const now = new Date();
-    // Assuming workday from 9 AM to 5 PM
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0, 0);
-    
-    let progress = 0;
-    
-    if (now > endOfDay) {
-        progress = 100;
-    } else if (now > startOfDay) {
-        const totalMs = endOfDay - startOfDay;
-        const elapsedMs = now - startOfDay;
-        progress = (elapsedMs / totalMs) * 100;
-    }
-    
-    progressEl.style.height = `${progress}%`;
-}
-
-function loadStreak() {
-    // A simple mock streak counter logic that could be expanded
-    const streakTitle = document.getElementById('streak-title');
-    
+function saveToStorage() {
+    const obj = {};
+    obj[state.activeDate] = state.data;
     if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.get(['last_active_date', 'current_streak'], (result) => {
-            const todayStr = new Date().toDateString();
-            let streak = result.current_streak || 1;
-            
-            if (result.last_active_date !== todayStr) {
-                // If it wasn't yesterday, it breaks (simplified)
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                
-                if (result.last_active_date === yesterday.toDateString()) {
-                    streak++;
-                } else {
-                    streak = 1;
-                }
-                
-                chrome.storage.local.set({
-                    'last_active_date': todayStr,
-                    'current_streak': streak
-                });
-            }
-            streakTitle.textContent = `${streak} Day Streak`;
-        });
+        chrome.storage.local.set(obj);
     } else {
-        // Fallback
-        streakTitle.textContent = `3 Day Streak`;
+        localStorage.setItem(state.activeDate, JSON.stringify(state.data));
     }
 }
 
-function initExportBackup() {
-    const exportBtn = document.getElementById('export-btn');
-    if (!exportBtn) return;
+// --- Hydration ---
+function hydrateUI() {
+    document.getElementById('daily-intention').value = state.data.intention || '';
+    document.getElementById('daily-notes').value = state.data.notes || '';
     
-    exportBtn.addEventListener('click', () => {
-        if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.get(null, (items) => {
-                downloadJSON(items, 'onedash_backup.json');
-            });
-        } else {
-            // Fallback for non-extension environment
-            const items = { daily_focus: localStorage.getItem('daily_focus') || '' };
-            downloadJSON(items, 'onedash_backup.json');
-        }
+    const mood = state.data.mood || '😃 Happy';
+    const energy = state.data.energy || '80';
+    document.getElementById('mood-display').textContent = mood;
+    document.getElementById('energy-display-val').textContent = energy + '%';
+    document.getElementById('energy-range').value = energy;
+    document.getElementById('energy-value-preview').textContent = energy + '%';
+    
+    renderTasks();
+    renderFinance();
+}
+
+function saveIntention(e) {
+    state.data.intention = e.target.value;
+    saveToStorage();
+}
+
+function saveNotes(e) {
+    state.data.notes = e.target.value;
+    saveToStorage();
+}
+
+// --- Tasks ---
+function generateId() {
+    return Math.random().toString(36).substr(2, 9);
+}
+
+function addTask(parentArray, text) {
+    parentArray.push({
+        id: generateId(),
+        text: text,
+        completed: false,
+        children: []
     });
+}
+
+function renderTasks() {
+    const container = document.getElementById('tasks-container');
+    container.innerHTML = '';
+    const rootList = createTaskListDOM(state.data.tasks, 0); // layer 0
+    container.appendChild(rootList);
+}
+
+function createTaskListDOM(tasksArray, depth) {
+    const ul = document.createElement('ul');
+    ul.className = 'task-list';
+    if (tasksArray) {
+        tasksArray.forEach((task, index) => {
+            ul.appendChild(createTaskDOM(task, tasksArray, index, depth));
+        });
+    }
+    return ul;
+}
+
+function createTaskDOM(task, parentArray, index, depth) {
+    const li = document.createElement('li');
+    li.className = `task-item ${task.completed ? 'completed' : ''}`;
+    li.setAttribute('draggable', 'true');
+    li.dataset.id = task.id;
+    
+    // HTML5 Drag and Drop events
+    li.addEventListener('dragstart', (e) => {
+        state.draggedTask = { task, parentArray, index };
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => li.style.opacity = '0.5', 0);
+        e.stopPropagation();
+    });
+    
+    li.addEventListener('dragend', (e) => {
+        li.style.opacity = '1';
+        state.draggedTask = null;
+        e.stopPropagation();
+    });
+    
+    li.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        e.stopPropagation();
+    });
+    
+    li.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!state.draggedTask) return;
+        
+        // Remove from old parent
+        state.draggedTask.parentArray.splice(state.draggedTask.index, 1);
+        
+        // Insert into new parent
+        parentArray.splice(index, 0, state.draggedTask.task);
+        
+        state.draggedTask = null;
+        saveTasks();
+        renderTasks();
+    });
+    
+    const row = document.createElement('div');
+    row.className = 'task-row';
+    
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.innerHTML = '⋮⋮';
+    
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = task.completed;
+    cb.onchange = () => {
+        task.completed = cb.checked;
+        saveTasks();
+        renderTasks();
+    };
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'task-text';
+    input.value = task.text;
+    input.oninput = debounce((e) => {
+        task.text = e.target.value;
+        saveTasks();
+    }, 300);
+    
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+    
+    if (depth < 2) { // Restrict to 3 layers (0, 1, 2)
+        const addSubBtn = document.createElement('button');
+        addSubBtn.className = 'task-btn';
+        addSubBtn.textContent = '+';
+        addSubBtn.onclick = () => {
+            if (!task.children) task.children = [];
+            addTask(task.children, '');
+            saveTasks();
+            renderTasks();
+        };
+        actions.appendChild(addSubBtn);
+    }
+    
+    const delBtn = document.createElement('button');
+    delBtn.className = 'task-btn';
+    delBtn.textContent = '×';
+    delBtn.onclick = () => {
+        parentArray.splice(index, 1);
+        saveTasks();
+        renderTasks();
+    };
+    actions.appendChild(delBtn);
+    
+    row.appendChild(handle);
+    row.appendChild(cb);
+    row.appendChild(input);
+    row.appendChild(actions);
+    
+    li.appendChild(row);
+    
+    if (task.children && task.children.length > 0) {
+        li.appendChild(createTaskListDOM(task.children, depth + 1));
+    }
+    return li;
+}
+
+function saveTasks() {
+    saveToStorage();
+}
+
+// --- Finance ---
+function renderFinance() {
+    const list = document.getElementById('finance-list');
+    list.innerHTML = '';
+    let total = 0;
+    
+    const data = state.data.finance || [];
+    
+    data.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = `finance-item ${item.type}`;
+        
+        let amountStr = parseFloat(item.amount).toFixed(2);
+        if (item.type === 'expense') {
+            total -= parseFloat(item.amount);
+            amountStr = '-$' + amountStr;
+        } else {
+            total += parseFloat(item.amount);
+            amountStr = '+$' + amountStr;
+        }
+        
+        div.innerHTML = `
+            <span>${item.desc}</span>
+            <div>
+               <span class="amount">${amountStr}</span>
+               <button class="del-btn" onclick="deleteFinance(${index})">×</button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+    
+    document.getElementById('finance-total').textContent = `$${total.toFixed(2)}`;
+}
+
+function saveFinanceEntry() {
+    const type = document.getElementById('finance-type').value;
+    const desc = document.getElementById('finance-desc').value;
+    const amount = document.getElementById('finance-amount').value;
+    
+    if (!desc || !amount) return;
+    
+    if (!state.data.finance) state.data.finance = [];
+    state.data.finance.push({
+        id: generateId(),
+        type, desc, amount: parseFloat(amount)
+    });
+    
+    saveToStorage();
+    renderFinance();
+    document.getElementById('finance-form').classList.add('hidden');
+    clearFinanceForm();
+}
+
+function deleteFinance(index) {
+    state.data.finance.splice(index, 1);
+    saveToStorage();
+    renderFinance();
+}
+
+function clearFinanceForm() {
+    document.getElementById('finance-desc').value = '';
+    document.getElementById('finance-amount').value = '';
+}
+
+// --- Utils ---
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+function exportBackup() {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.get(null, (items) => {
+            downloadJSON(items, 'onedash_backup.json');
+        });
+    } else {
+        const items = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            try { items[key] = JSON.parse(localStorage.getItem(key)); } catch(e){}
+        }
+        downloadJSON(items, 'onedash_backup.json');
+    }
 }
 
 function downloadJSON(data, filename) {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", filename);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+    const a = document.createElement('a');
+    a.href = dataStr;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 }
+
+// --- Status Popups ---
+function initStatusPopups() {
+    const moodDisplay = document.getElementById('mood-display');
+    const moodPopup = document.getElementById('mood-popup');
+    const energyDisplay = document.getElementById('energy-display');
+    const energyPopup = document.getElementById('energy-popup');
+    const energyRange = document.getElementById('energy-range');
+    const energyPreview = document.getElementById('energy-value-preview');
+
+    moodDisplay.addEventListener('click', (e) => {
+        moodPopup.classList.toggle('hidden');
+        energyPopup.classList.add('hidden');
+        e.stopPropagation();
+    });
+    
+    energyDisplay.addEventListener('click', (e) => {
+        energyPopup.classList.toggle('hidden');
+        moodPopup.classList.add('hidden');
+        e.stopPropagation();
+    });
+
+    document.addEventListener('click', () => {
+        moodPopup.classList.add('hidden');
+        energyPopup.classList.add('hidden');
+    });
+
+    moodPopup.addEventListener('click', (e) => e.stopPropagation());
+    energyPopup.addEventListener('click', (e) => e.stopPropagation());
+
+    document.querySelectorAll('.mood-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const selectedMood = e.target.getAttribute('data-mood');
+            state.data.mood = selectedMood;
+            document.getElementById('mood-display').textContent = selectedMood;
+            moodPopup.classList.add('hidden');
+            saveToStorage();
+        });
+    });
+
+    energyRange.addEventListener('input', (e) => {
+        energyPreview.textContent = e.target.value + '%';
+    });
+    
+    energyRange.addEventListener('change', (e) => {
+        state.data.energy = e.target.value;
+        document.getElementById('energy-display-val').textContent = e.target.value + '%';
+        saveToStorage();
+    });
+}
+
+// --- Streak Logic ---
+function loadStreak() {
+    const today = new Date().toISOString().split('T')[0];
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+
+    const getStreakMsg = (streak) => {
+        if (streak <= 0) return "Ready to start?";
+        if (streak <= 3) return "Great start!";
+        if (streak <= 7) return "You're on fire! 🔥";
+        if (streak <= 30) return "Unstoppable! 🚀";
+        return "Legendary momentum! 👑";
+    };
+
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.get(['streakInfo'], (res) => {
+            let info = res.streakInfo || { currentStreak: 0, lastActiveDate: null };
+            
+            if (info.lastActiveDate !== today) {
+                if (info.lastActiveDate === yesterdayStr) {
+                    info.currentStreak += 1;
+                } else {
+                    info.currentStreak = 1;
+                }
+                info.lastActiveDate = today;
+                chrome.storage.local.set({ streakInfo: info });
+            }
+            
+            document.getElementById('streak-val').textContent = `${info.currentStreak} Day${info.currentStreak === 1 ? '' : 's'}`;
+            document.getElementById('streak-msg').textContent = getStreakMsg(info.currentStreak);
+        });
+    } else {
+        let infoStr = localStorage.getItem('streakInfo');
+        let info = infoStr ? JSON.parse(infoStr) : { currentStreak: 0, lastActiveDate: null };
+        if (info.lastActiveDate !== today) {
+            if (info.lastActiveDate === yesterdayStr) {
+                info.currentStreak += 1;
+            } else {
+                info.currentStreak = 1;
+            }
+            info.lastActiveDate = today;
+            localStorage.setItem('streakInfo', JSON.stringify(info));
+        }
+        document.getElementById('streak-val').textContent = `${info.currentStreak} Day${info.currentStreak === 1 ? '' : 's'}`;
+        document.getElementById('streak-msg').textContent = getStreakMsg(info.currentStreak);
+    }
+}
+
