@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Premium, dark slate background mimicking the app's text color -->
+  <rect width="128" height="128" rx="28" fill="#111827" />
+  
+  <!-- "1-" Text rendered using the most robust platform-native thick sans-serifs -->
+  <text 
+     x="48%" 
+     y="54%" 
+     dominant-baseline="central" 
+     text-anchor="middle" 
+     font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
+     font-weight="900" 
+     font-size="76" 
+     fill="#ffffff" 
+     letter-spacing="-2">
+    1-
+  </text>
+  
+  <!-- Subtle accent dot matching our "Active Date" green shade -->
+  <circle cx="100" cy="100" r="8" fill="#22c55e" />
+</svg>

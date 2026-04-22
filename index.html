@@ -4,10 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-width=1.0">
   <title>OneDash</title>
+  <script>
+    try {
+      const config = JSON.parse(localStorage.getItem('appConfig')) || { theme: 'system', font: 'system', palette: 'default' };
+      if (config.theme === 'dark' || (config.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+      document.documentElement.setAttribute('data-font', config.font);
+      document.documentElement.setAttribute('data-palette', config.palette);
+    } catch(e) {}
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="brand-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 128 128">
+      <rect width="128" height="128" rx="28" fill="#111827" />
+      <text x="48%" y="54%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="900" font-size="76" fill="#ffffff" letter-spacing="-2">1-</text>
+      <circle class="logo-dot" cx="100" cy="100" r="8" fill="#22c55e" />
+    </svg>
+  </div>
   
   <header class="top-bar">
     <div class="status-indicators">
@@ -44,6 +61,12 @@
         <!-- Dynamically populated dates list (past 30 days) -->
       </div>
       <div class="sidebar-actions">
+         <button id="settings-btn" title="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+         </button>
          <button id="export-btn" title="Export Backup">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -127,6 +150,40 @@
 
       </section>
     </main>
+  </div>
+  
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button id="close-settings" class="close-modal-btn">&times;</button>
+      </div>
+      <div class="setting-group">
+        <label for="config-theme">Theme Mode</label>
+        <select id="config-theme">
+          <option value="system">System Default</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label for="config-palette">Color Palette</label>
+        <select id="config-palette">
+          <option value="default">Default Green</option>
+          <option value="ocean">Ocean Blue</option>
+          <option value="sunset">Sunset Orange</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label for="config-font">Font Style</label>
+        <select id="config-font">
+          <option value="system">System Default</option>
+          <option value="inter">Inter (Modern)</option>
+          <option value="mono">Monospace</option>
+          <option value="serif">Classic Serif</option>
+        </select>
+      </div>
+    </div>
   </div>
   
   <script src="app.js"></script>

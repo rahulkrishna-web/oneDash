@@ -21,6 +21,8 @@ function initApp() {
     
     initStatusPopups();
     loadStreak();
+    initSettings();
+
 
     
     // Tasks
@@ -225,14 +227,23 @@ function createTaskDOM(task, parentArray, index, depth) {
         renderTasks();
     };
     
-    const input = document.createElement('input');
-    input.type = 'text';
+    const input = document.createElement('span');
+    input.setAttribute('contenteditable', 'true');
     input.className = 'task-text';
-    input.value = task.text;
+    input.textContent = task.text;
     input.oninput = debounce((e) => {
-        task.text = e.target.value;
+        task.text = e.target.textContent;
         saveTasks();
     }, 300);
+    
+    // Prevent Enter key from creating new lines (optional, but keep it for task behavior)
+    // If you WANT internal enters, remove this listener.
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            input.blur();
+        }
+    };
     
     const actions = document.createElement('div');
     actions.className = 'task-actions';
@@ -298,13 +309,26 @@ function renderFinance() {
             amountStr = '+$' + amountStr;
         }
         
-        div.innerHTML = `
-            <span>${item.desc}</span>
-            <div>
-               <span class="amount">${amountStr}</span>
-               <button class="del-btn" onclick="deleteFinance(${index})">×</button>
-            </div>
-        `;
+        const spanDesc = document.createElement('span');
+        spanDesc.textContent = item.desc;
+        
+        const actionsDiv = document.createElement('div');
+        
+        const spanAmount = document.createElement('span');
+        spanAmount.className = 'amount';
+        spanAmount.textContent = amountStr;
+        
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del-btn';
+        delBtn.textContent = '×';
+        delBtn.addEventListener('click', () => deleteFinance(index));
+        
+        actionsDiv.appendChild(spanAmount);
+        actionsDiv.appendChild(delBtn);
+        
+        div.appendChild(spanDesc);
+        div.appendChild(actionsDiv);
+        
         list.appendChild(div);
     });
     
@@ -473,4 +497,93 @@ function loadStreak() {
         document.getElementById('streak-msg').textContent = getStreakMsg(info.currentStreak);
     }
 }
+
+// --- Settings Logic ---
+function applyConfig(config) {
+    if (config.theme === 'dark' || (config.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+    document.documentElement.setAttribute('data-font', config.font);
+    document.documentElement.setAttribute('data-palette', config.palette);
+    
+    // Sync UI controls if they exist (for cross-tab updates)
+    const tSelect = document.getElementById('config-theme');
+    const pSelect = document.getElementById('config-palette');
+    const fSelect = document.getElementById('config-font');
+    if (tSelect) tSelect.value = config.theme;
+    if (pSelect) pSelect.value = config.palette;
+    if (fSelect) fSelect.value = config.font;
+}
+
+function initSettings() {
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeBtn = document.getElementById('close-settings');
+    
+    const themeSelect = document.getElementById('config-theme');
+    const paletteSelect = document.getElementById('config-palette');
+    const fontSelect = document.getElementById('config-font');
+    
+    let savedConfig = { theme: 'system', font: 'system', palette: 'default' };
+    try {
+        const stored = localStorage.getItem('appConfig');
+        if (stored) savedConfig = JSON.parse(stored);
+    } catch(e) {}
+    
+    // Initial apply
+    applyConfig(savedConfig);
+
+    const handleUiChange = () => {
+        const config = {
+            theme: themeSelect.value,
+            palette: paletteSelect.value,
+            font: fontSelect.value
+        };
+        localStorage.setItem('appConfig', JSON.stringify(config));
+        applyConfig(config);
+    };
+
+    themeSelect.addEventListener('change', handleUiChange);
+    paletteSelect.addEventListener('change', handleUiChange);
+    fontSelect.addEventListener('change', handleUiChange);
+
+    // Cross-tab sync listener
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'appConfig') {
+            try {
+                const newConfig = JSON.parse(e.newValue);
+                applyConfig(newConfig);
+            } catch(err) {}
+        }
+    });
+
+    settingsBtn.addEventListener('click', () => {
+        settingsModal.classList.remove('hidden');
+    });
+
+    closeBtn.addEventListener('click', () => {
+        settingsModal.classList.add('hidden');
+    });
+
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            settingsModal.classList.add('hidden');
+        }
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (themeSelect.value === 'system') {
+            const config = {
+                theme: themeSelect.value,
+                palette: paletteSelect.value,
+                font: fontSelect.value
+            };
+            applyConfig(config);
+        }
+    });
+}
+
+
 
